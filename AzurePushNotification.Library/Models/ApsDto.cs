@@ -2,6 +2,6 @@
 {
     public class ApsDto
     {
-        public string Alert { get; set; }
+        public ApsAlertDto Alert { get; set; }
     }
 }

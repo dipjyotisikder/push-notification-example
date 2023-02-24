@@ -26,7 +26,7 @@ namespace AzurePushNotification.Controllers
         [Route("deviceInstallations")]
         public async Task<IActionResult> UpdateDeviceInstallation([Required] DeviceInstallationDto deviceInstallation)
         {
-            var success = await _notificationService.InstallDeviceAsync(deviceInstallation, HttpContext.RequestAborted);
+            var success = await _notificationService.InstallDevice(deviceInstallation, HttpContext.RequestAborted);
 
             if (!success)
             {
@@ -40,7 +40,7 @@ namespace AzurePushNotification.Controllers
         [Route("deviceInstallations/{installationId}")]
         public async Task<ActionResult> DeleteDeviceInstallation([Required][FromRoute] string installationId)
         {
-            var success = await _notificationService.DeleteInstalledDeviceByInstallationIdAsync(installationId, CancellationToken.None);
+            var success = await _notificationService.DeleteInstalledDeviceByInstallationId(installationId, CancellationToken.None);
             if (!success)
             {
                 return new UnprocessableEntityResult();
@@ -50,7 +50,7 @@ namespace AzurePushNotification.Controllers
         }
 
         [HttpPost]
-        [Route("requests")]
+        [Route("sendNotification")]
         public async Task<IActionResult> SendPushNotification([Required] NotificationDto notificationRequest)
         {
             if (string.IsNullOrWhiteSpace(notificationRequest?.Body) || string.IsNullOrWhiteSpace(notificationRequest?.Title))
@@ -58,7 +58,7 @@ namespace AzurePushNotification.Controllers
                 return new BadRequestResult();
             }
 
-            var success = await _notificationService.SendPushNotificationAsync(notificationRequest, HttpContext.RequestAborted);
+            var success = await _notificationService.SendPushNotification(notificationRequest, HttpContext.RequestAborted);
 
             if (!success)
             {

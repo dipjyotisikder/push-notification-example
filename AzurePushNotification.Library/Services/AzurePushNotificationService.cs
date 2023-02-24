@@ -34,18 +34,20 @@ namespace AzurePushNotification.Services
             _installationPlatform = new Dictionary<string, NotificationPlatform>
             {
                 { nameof(NotificationPlatform.Fcm).ToLower(), NotificationPlatform.Fcm },
-
-                // { nameof(NotificationPlatform.Apns).ToLower(), NotificationPlatform.Apns }
+                { nameof(NotificationPlatform.Apns).ToLower(), NotificationPlatform.Apns },
+                { nameof(NotificationPlatform.Wns).ToLower(), NotificationPlatform.Wns },
             };
         }
 
         /// <inheritdoc/>
-        public async Task<bool> InstallDeviceAsync(DeviceInstallationDto deviceInstallationDto, CancellationToken token)
+        public async Task<bool> InstallDevice(DeviceInstallationDto deviceInstallationDto, CancellationToken token)
         {
-            if (string.IsNullOrWhiteSpace(deviceInstallationDto?.InstallationId)
-                || string.IsNullOrWhiteSpace(deviceInstallationDto?.PushChannel)
-                || string.IsNullOrWhiteSpace(deviceInstallationDto?.Platform)
-                || deviceInstallationDto?.Tags is null)
+            if (string.IsNullOrWhiteSpace(deviceInstallationDto.InstallationId)
+                || string.IsNullOrWhiteSpace(deviceInstallationDto.PushChannel)
+                || string.IsNullOrWhiteSpace(deviceInstallationDto.Platform)
+                || !Enum.TryParse(deviceInstallationDto.Platform, out NotificationPlatform result)
+                || deviceInstallationDto.Tags is null
+                || deviceInstallationDto.Tags.Any(x => string.IsNullOrWhiteSpace(x)))
             {
                 return false;
             }
@@ -55,16 +57,8 @@ namespace AzurePushNotification.Services
                 InstallationId = deviceInstallationDto.InstallationId,
                 PushChannel = deviceInstallationDto.PushChannel,
                 Tags = deviceInstallationDto.Tags,
+                Platform = result,
             };
-
-            if (_installationPlatform.TryGetValue(deviceInstallationDto.Platform, out var platform))
-            {
-                deviceInstallation.Platform = platform;
-            }
-            else
-            {
-                return false;
-            }
 
             try
             {
@@ -79,7 +73,7 @@ namespace AzurePushNotification.Services
         }
 
         /// <inheritdoc/>
-        public async Task<bool> DeleteInstalledDeviceByInstallationIdAsync(string installationId, CancellationToken token)
+        public async Task<bool> DeleteInstalledDeviceByInstallationId(string installationId, CancellationToken token)
         {
             if (string.IsNullOrWhiteSpace(installationId))
             {
@@ -99,7 +93,7 @@ namespace AzurePushNotification.Services
         }
 
         /// <inheritdoc/>
-        public async Task<bool> SendPushNotificationAsync(NotificationDto notificationDto, CancellationToken token)
+        public async Task<bool> SendPushNotification(NotificationDto notificationDto, CancellationToken token)
         {
             int maximumTagsPerRequest = 5;
 
@@ -136,7 +130,7 @@ namespace AzurePushNotification.Services
             }
         }
 
-        private List<Task> PreparePushNotificationRequests(string title, string body, string[] tags, CancellationToken token)
+        private List<Task> PreparePushNotificationRequests(string title, string body, string[] tags, CancellationToken cancellationToken)
         {
             var tasks = new List<Task>();
             foreach (var platform in _installationPlatform.Values)
@@ -159,7 +153,7 @@ namespace AzurePushNotification.Services
                                 },
                             }),
                             tags,
-                            token));
+                            cancellationToken));
                         break;
 
                     case NotificationPlatform.Apns:
@@ -168,11 +162,29 @@ namespace AzurePushNotification.Services
                             {
                                 Aps = new ApsDto
                                 {
-                                    Alert = body,
+                                    Alert = new ApsAlertDto
+                                    {
+                                        Title = title,
+                                        Body = body,
+                                    },
                                 },
                             }),
                             tags,
-                            token));
+                            cancellationToken));
+                        break;
+
+                    case NotificationPlatform.Wns:
+                        tasks.Add(_hub.SendWindowsNativeNotificationAsync(
+                            @$"<toast launch='payload=%7B%22test%22%3A%22value%22%7D'>
+                                <visual lang='en-US'>
+                                <binding template='ToastGeneric'>
+                                <text>{title}</text>
+                                <text>{body}</text>
+                                </binding>
+                                </visual>
+                              </toast>",
+                            tags,
+                            cancellationToken));
                         break;
 
                     default:

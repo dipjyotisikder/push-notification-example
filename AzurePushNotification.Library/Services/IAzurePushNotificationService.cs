@@ -13,7 +13,7 @@ namespace AzurePushNotification.Services
         /// <param name="deviceInstallationDto">The <see cref="DeviceInstallationDto"/> DTO for installing the device.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Installation was successful or not.</returns>
-        Task<bool> InstallDeviceAsync(DeviceInstallationDto deviceInstallationDto, CancellationToken token);
+        Task<bool> InstallDevice(DeviceInstallationDto deviceInstallationDto, CancellationToken token);
 
         /// <summary>
         /// Removes the device installed in Azure.
@@ -21,7 +21,7 @@ namespace AzurePushNotification.Services
         /// <param name="installationId">Unique installation ID, provided by device.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Deletion was successful or not.</returns>
-        Task<bool> DeleteInstalledDeviceByInstallationIdAsync(string installationId, CancellationToken token);
+        Task<bool> DeleteInstalledDeviceByInstallationId(string installationId, CancellationToken token);
 
         /// <summary>
         /// Sends the notification to Azure.
@@ -29,6 +29,6 @@ namespace AzurePushNotification.Services
         /// <param name="notificationDto">The notification DTO model.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Notification was successfully sent or not.</returns>
-        Task<bool> SendPushNotificationAsync(NotificationDto notificationDto, CancellationToken token);
+        Task<bool> SendPushNotification(NotificationDto notificationDto, CancellationToken token);
     }
 }
