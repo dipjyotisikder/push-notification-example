@@ -13,11 +13,11 @@ namespace PN.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    public class PushNotificationsController : Controller
+    public class AzureNotificationsController : Controller
     {
         private readonly IAzurePushNotificationService _notificationService;
 
-        public PushNotificationsController(IAzurePushNotificationService notificationService)
+        public AzureNotificationsController(IAzurePushNotificationService notificationService)
         {
             _notificationService = notificationService;
         }

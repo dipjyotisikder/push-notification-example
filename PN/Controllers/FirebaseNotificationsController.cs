@@ -13,9 +13,9 @@ namespace PN.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    public class FirebasePushNotificationsController : Controller
+    public class FirebaseNotificationsController : Controller
     {
-        public FirebasePushNotificationsController()
+        public FirebaseNotificationsController()
         {
         }
 
