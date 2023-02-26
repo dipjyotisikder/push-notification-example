@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace AzurePushNotification.Library.Models
+namespace PN.Library.Models
 {
     public class NotificationDto
     {

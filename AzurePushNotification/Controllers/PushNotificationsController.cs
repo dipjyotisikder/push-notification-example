@@ -1,12 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
-using AzurePushNotification.Library.Models;
-using AzurePushNotification.Models;
-using AzurePushNotification.Services;
 using Microsoft.AspNetCore.Mvc;
+using PN.Library.Models;
+using PN.Models;
+using PN.Services;
 
-namespace AzurePushNotification.Controllers
+namespace PN.Controllers
 {
     /// <summary>
     /// Controller for Push Notifications.
@@ -26,7 +26,7 @@ namespace AzurePushNotification.Controllers
         [Route("deviceInstallations")]
         public async Task<IActionResult> UpdateDeviceInstallation([Required] DeviceInstallationDto deviceInstallation)
         {
-            var success = await _notificationService.InstallDevice(deviceInstallation, HttpContext.RequestAborted);
+            var success = await _notificationService.InstallDevice(deviceInstallation, default);
 
             if (!success)
             {
@@ -58,7 +58,7 @@ namespace AzurePushNotification.Controllers
                 return new BadRequestResult();
             }
 
-            var success = await _notificationService.SendPushNotification(notificationRequest, HttpContext.RequestAborted);
+            var success = await _notificationService.SendPushNotification(notificationRequest, default);
 
             if (!success)
             {

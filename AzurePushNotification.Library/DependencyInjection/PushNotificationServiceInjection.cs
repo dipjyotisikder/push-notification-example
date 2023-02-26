@@ -1,11 +1,11 @@
-﻿using AzurePushNotification.Services;
+﻿using PN.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AzurePushNotification.DependencyInjection
+namespace PN.DependencyInjection
 {
     public static class PushNotificationServiceInjection
     {
-        public static IServiceCollection AddPushNotificationService(this IServiceCollection services)
+        public static IServiceCollection AddAzurePushNotification(this IServiceCollection services)
         {
             services.AddSingleton<IAzurePushNotificationService, AzurePushNotificationService>();
             return services;

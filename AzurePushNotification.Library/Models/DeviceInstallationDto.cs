@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace AzurePushNotification.Models
+namespace PN.Models
 {
     /// <summary>
     /// Class for device installation.

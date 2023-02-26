@@ -1,9 +1,9 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using AzurePushNotification.Library.Models;
-using AzurePushNotification.Models;
+using PN.Library.Models;
+using PN.Models;
 
-namespace AzurePushNotification.Services
+namespace PN.Services
 {
     public interface IAzurePushNotificationService
     {

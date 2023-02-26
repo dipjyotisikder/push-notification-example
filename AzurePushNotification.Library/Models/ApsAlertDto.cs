@@ -1,4 +1,4 @@
-﻿namespace AzurePushNotification.Library.Models
+﻿namespace PN.Library.Models
 {
     public class ApsAlertDto
     {

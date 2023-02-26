@@ -3,21 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using AzurePushNotification.Library.Models;
-using AzurePushNotification.Models;
 using Microsoft.Azure.NotificationHubs;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using PN.Library.Models;
+using PN.Models;
 
-namespace AzurePushNotification.Services
+namespace PN.Services
 {
     /// <summary>
     /// Instantiate <see cref="AzurePushNotificationService" /> class.
     /// </summary>
     public class AzurePushNotificationService : IAzurePushNotificationService
     {
-        private readonly NotificationHubClient _hub;
+        private readonly NotificationHubClient _notificationHub;
         private readonly Dictionary<string, NotificationPlatform> _installationPlatform;
         private readonly ILogger<AzurePushNotificationService> _logger;
 
@@ -29,13 +30,13 @@ namespace AzurePushNotification.Services
         public AzurePushNotificationService(IOptionsMonitor<NotificationHubOptions> options, ILogger<AzurePushNotificationService> logger)
         {
             _logger = logger;
-            _hub = NotificationHubClient.CreateClientFromConnectionString(options.CurrentValue.ConnectionString, options.CurrentValue.Name);
+            _notificationHub = NotificationHubClient.CreateClientFromConnectionString(options.CurrentValue.ConnectionString, options.CurrentValue.Name);
 
             _installationPlatform = new Dictionary<string, NotificationPlatform>
             {
                 { nameof(NotificationPlatform.Fcm).ToLower(), NotificationPlatform.Fcm },
-                { nameof(NotificationPlatform.Apns).ToLower(), NotificationPlatform.Apns },
-                { nameof(NotificationPlatform.Wns).ToLower(), NotificationPlatform.Wns },
+              /*{ nameof(NotificationPlatform.Apns).ToLower(), NotificationPlatform.Apns },
+                { nameof(NotificationPlatform.Wns).ToLower(), NotificationPlatform.Wns },*/
             };
         }
 
@@ -45,7 +46,7 @@ namespace AzurePushNotification.Services
             if (string.IsNullOrWhiteSpace(deviceInstallationDto.InstallationId)
                 || string.IsNullOrWhiteSpace(deviceInstallationDto.PushChannel)
                 || string.IsNullOrWhiteSpace(deviceInstallationDto.Platform)
-                || !Enum.TryParse(deviceInstallationDto.Platform, out NotificationPlatform result)
+                || !Enum.TryParse(deviceInstallationDto.Platform, ignoreCase: true, out NotificationPlatform result)
                 || deviceInstallationDto.Tags is null
                 || deviceInstallationDto.Tags.Any(x => string.IsNullOrWhiteSpace(x)))
             {
@@ -62,9 +63,9 @@ namespace AzurePushNotification.Services
 
             try
             {
-                await _hub.CreateOrUpdateInstallationAsync(deviceInstallation, token);
+                await _notificationHub.CreateOrUpdateInstallationAsync(deviceInstallation, token);
             }
-            catch
+            catch (Exception e)
             {
                 return false;
             }
@@ -82,7 +83,7 @@ namespace AzurePushNotification.Services
 
             try
             {
-                await _hub.DeleteInstallationAsync(installationId, token);
+                await _notificationHub.DeleteInstallationAsync(installationId, token);
             }
             catch
             {
@@ -138,43 +139,57 @@ namespace AzurePushNotification.Services
                 switch (platform)
                 {
                     case NotificationPlatform.Fcm:
-                        tasks.Add(_hub.SendFcmNativeNotificationAsync(
-                            JsonConvert.SerializeObject(new FcmNotificationEventDto
+                        var json = JsonConvert.SerializeObject(
+                        new FcmNotificationEventDto
+                        {
+                            Notification = new FcmNotificationDto
                             {
-                                Notification = new FcmNotificationDto
-                                {
-                                    Title = title,
-                                    Body = body,
-                                },
-                                Data = new Dictionary<string, string>
-                                {
-                                    { "title", title },
-                                    { "body", body },
-                                },
-                            }),
+                                Title = title,
+                                Body = body,
+                            },
+                            Data = new Dictionary<string, string>
+                            {
+                                { "title", title },
+                                { "body", body },
+                            },
+                        },
+                        new JsonSerializerSettings
+                        {
+                            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                        });
+
+                        tasks.Add(_notificationHub.SendFcmNativeNotificationAsync(
+                            json,
                             tags,
                             cancellationToken));
                         break;
 
                     case NotificationPlatform.Apns:
-                        tasks.Add(_hub.SendAppleNativeNotificationAsync(
-                            JsonConvert.SerializeObject(new ApnNotificationDto
+                        var iosJson = JsonConvert.SerializeObject(
+                        new ApnNotificationDto
+                        {
+                            Aps = new ApsDto
                             {
-                                Aps = new ApsDto
+                                Alert = new ApsAlertDto
                                 {
-                                    Alert = new ApsAlertDto
-                                    {
-                                        Title = title,
-                                        Body = body,
-                                    },
+                                    Title = title,
+                                    Body = body,
                                 },
-                            }),
+                            },
+                        },
+                        new JsonSerializerSettings
+                        {
+                            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                        });
+
+                        tasks.Add(_notificationHub.SendAppleNativeNotificationAsync(
+                            iosJson,
                             tags,
                             cancellationToken));
                         break;
 
                     case NotificationPlatform.Wns:
-                        tasks.Add(_hub.SendWindowsNativeNotificationAsync(
+                        tasks.Add(_notificationHub.SendWindowsNativeNotificationAsync(
                             @$"<toast launch='payload=%7B%22test%22%3A%22value%22%7D'>
                                 <visual lang='en-US'>
                                 <binding template='ToastGeneric'>
