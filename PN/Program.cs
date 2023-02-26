@@ -1,9 +1,12 @@
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using PN.DependencyInjection;
-using PN.Extensions;
+using PN.Constants;
 using PN.Library.Models;
+using PN.Services;
 
 internal class Program
 {
@@ -16,11 +19,17 @@ internal class Program
             .AddControllers();
 
         builder.Services
-            .Configure<NotificationHubOptions>(builder.Configuration.GetSection(nameof(NotificationHubOptions)));
+            .Configure<NotificationHubOptions>(
+                builder.Configuration.GetSection(nameof(NotificationHubOptions)));
 
-        builder.Services
-            .AddAzurePushNotification()
-            .AddFirebase(builder.Configuration);
+        builder.Services.AddSingleton<IAzurePushNotificationService, AzurePushNotificationService>();
+
+        FirebaseApp.Create(new AppOptions()
+        {
+            Credential = GoogleCredential.FromJsonParameters(builder.Configuration
+                .GetSection(CommonConstants.GOOGLE_CREDENTIAL_CONFIGURATION_KEY)
+                .Get<JsonCredentialParameters>()),
+        });
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
