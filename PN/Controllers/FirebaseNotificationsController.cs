@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Tasks;
 using FirebaseAdmin.Messaging;
 using Microsoft.AspNetCore.Mvc;
@@ -24,19 +25,32 @@ namespace PN.Controllers
         public async Task<IActionResult> SendNotification([Required] SendFirebaseNotificationRequest notification)
         {
             var messaging = FirebaseMessaging.DefaultInstance;
-
-            var result = await messaging.SendAsync(new Message
+            var tokens = new List<string> { notification.FcmToken };
+            var response = await messaging.SendMulticastAsync(new MulticastMessage
             {
-                Token = notification.FcmToken, // "d3aLewjvTNw:APA91bE94LuGCqCSInwVaPuL1RoqWokeSLtwauyK-r0EmkPNeZmGavSG6ZgYQ4GRjp0NgOI1p-OAKORiNPHZe2IQWz5v1c3mwRE5s5WTv6_Pbhh58rY0yGEMQdDNEtPPZ_kJmqN5CaIc",
-                Data = new Dictionary<string, string>(),
+                Tokens = tokens,
                 Notification = new Notification
                 {
                     Title = notification.Title,
                     Body = notification.Body,
                 },
+                Data = new Dictionary<string, string>()
+                {
+                    { "fcmToken", notification.FcmToken },
+                },
             });
 
-            return Ok(result);
+            if (response.FailureCount > 0)
+            {
+                var failedFcmTokens = response.Responses
+                    .Where(x => !x.IsSuccess && x.Exception.MessagingErrorCode == MessagingErrorCode.Unregistered)
+                    .Select((x, index) => tokens[index]).ToList();
+
+                // Remove failed tokens from Database.
+
+            }
+
+            return Ok(response);
         }
     }
 }
