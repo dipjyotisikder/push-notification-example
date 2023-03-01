@@ -2,7 +2,6 @@
 
 namespace PN.Models
 {
-
     public class SendFirebaseNotificationRequest
     {
         [JsonProperty("fcmToken")]
